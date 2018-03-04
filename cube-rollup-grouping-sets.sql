@@ -1,3 +1,7 @@
+-- SUBTOTAL OPERATORS
+
+
+-- CUBE : generates a complete set of subtotals for collection of columns 
 SELECT dd.calmonth, cvd.addrcatcode1, SUM(ifa.extcost), SUM(ifa.quantity)
 FROM inventory_fact ifa
   INNER JOIN date_dim dd ON ifa.datekey = dd.datekey
@@ -7,6 +11,7 @@ WHERE ifa.transtypekey = 5
 GROUP BY CUBE(dd.calmonth, cvd.addrcatcode1);
 
 
+-- CUBE equivalent using GROUPING SETS
 SELECT dd.calquarter, cvd.zip, cvd.name, SUM(ifa.extcost), COUNT(*) AS NB_INV_TRANS
 FROM inventory_fact ifa
   INNER JOIN date_dim dd ON ifa.datekey = dd.datekey
@@ -25,6 +30,7 @@ GROUP BY GROUPING SETS(
 );
 
 
+-- ROLLUP : generates a partial set of subtotals in order of the grouped columns (hierarchical)
 SELECT cd.companyname, bpd.bpname, SUM(ifa.extcost), SUM(ifa.quantity)
 FROM inventory_fact ifa
   INNER JOIN branch_plant_dim bpd ON ifa.branchplantkey = bpd.branchplantkey
@@ -33,6 +39,7 @@ WHERE ifa.transtypekey = 2
 GROUP BY ROLLUP(cd.companyname, bpd.bpname);
 
 
+-- ROLLUP equivalent using GROUPING SETS
 SELECT ttd.transdescription, cd.companyname, bpd.bpname, SUM(ifa.extcost), COUNT(*)
 FROM inventory_fact ifa
   INNER JOIN trans_type_dim ttd ON ifa.transtypekey = ttd.transtypekey
@@ -46,6 +53,8 @@ GROUP BY GROUPING SETS(
 );
 
 
+-- Partial ROLLUP : produces subtotals for a subset of hierarchically related columns
+-- Generates totals on <name, calyear, calquarter>, <name, calyear>, <name>
 SELECT dd.calyear, dd.calquarter, cvd.name, SUM(ifa.extcost), COUNT(*) AS NB_INV_TRANS
 FROM inventory_fact ifa
   INNER JOIN date_dim dd ON ifa.datekey = dd.datekey
@@ -55,6 +64,7 @@ WHERE ifa.transtypekey = 5
 GROUP BY cvd.name, ROLLUP(dd.calyear, dd.calquarter);
 
 
+-- CUBE equivalent using UNION
 SELECT dd.calmonth, cvd.addrcatcode1, SUM(ifa.extcost), SUM(ifa.quantity)
 FROM inventory_fact ifa
   INNER JOIN date_dim dd ON ifa.datekey = dd.datekey
@@ -87,6 +97,7 @@ WHERE ifa.transtypekey = 5
   AND dd.calyear = 2011;
 
 
+-- ROLLUP equivalent using UNION
 SELECT cd.companyname, bpd.bpname, SUM(ifa.extcost), SUM(ifa.quantity)
 FROM inventory_fact ifa
   INNER JOIN branch_plant_dim bpd ON ifa.branchplantkey = bpd.branchplantkey
@@ -108,6 +119,8 @@ FROM inventory_fact ifa
 WHERE ifa.transtypekey = 2;
 
 
+-- Composite columns using CUBE
+-- Skips (name, calquarter)
 SELECT dd.calyear, dd.calquarter, cvd.name, SUM(ifa.extcost), COUNT(*) AS NB_INV_TRANS
 FROM inventory_fact ifa
   INNER JOIN date_dim dd ON ifa.datekey = dd.datekey
@@ -117,6 +130,7 @@ WHERE ifa.transtypekey = 5
 GROUP BY CUBE(cvd.name, (dd.calyear, dd.calquarter));
 
 
+-- GROUPING_ID : generates a hierarchical group number for each result row
 SELECT dd.calmonth, cvd.addrcatcode1, SUM(ifa.extcost), SUM(ifa.quantity), GROUPING_ID(dd.calmonth, cvd.addrcatcode1) AS Group_level
 FROM inventory_fact ifa
   INNER JOIN date_dim dd ON ifa.datekey = dd.datekey
@@ -127,6 +141,8 @@ GROUP BY CUBE(dd.calmonth, cvd.addrcatcode1)
 ORDER BY Group_Level;
 
 
+-- Nested Rollup operation
+-- Generates totals on <calyear, calquarter>, <callyear>, <> and name
 SELECT dd.calyear, dd.calquarter, cvd.name, SUM(ifa.extcost), COUNT(*) AS NB_INV_TRANS
 FROM inventory_fact ifa
   INNER JOIN date_dim dd ON ifa.datekey = dd.datekey
